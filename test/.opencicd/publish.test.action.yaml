@@ -1,0 +1,99 @@
+##
+##             Copyright 2025 Comcast Cable Communications Management, LLC
+##             Licensed under the Apache License, Version 2.0 (the "License");
+##             you may not use this file except in compliance with the License.
+##             You may obtain a copy of the License at
+##
+##             http://www.apache.org/licenses/LICENSE-2.0
+##
+##             Unless required by applicable law or agreed to in writing, software
+##             distributed under the License is distributed on an "AS IS" BASIS,
+##             WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+##             See the License for the specific language governing permissions and
+##             limitations under the License.
+##
+##             SPDX-License-Identifier: Apache-2.0
+##
+inputs:
+    - INPUT1
+secrets:
+    - SECRET1
+dependencies:
+    - test3
+jobs:
+
+    -   image: alpine:3.21
+        arguments: ls -al /opt/folder/something
+        volumes:
+            ".": "/opt/folder/something"
+
+    -   image: alpine:3.21
+        arguments:
+            - echo
+            - "Image string, Entrypoint not specified"
+
+    -   image: "alpine:${|ALPINE_VERSION|}"
+        arguments:
+            - echo
+            - "Env Test"
+            - " test: "
+            - ${|TEST|}
+            - " secret: "
+            - ${|SECRET1|}
+        environment:
+            TEST: TestValue-${|INPUT1|}
+            ALPINE_VERSION: 3.21
+
+
+    -   image: alpine:3.21
+        entrypoint-type: default
+        arguments:
+            - echo
+            - "Image string, Entrypoint Type: default"
+
+    -   image: alpine:3.21
+        entrypoint-type: default
+        arguments:
+            - echo
+            - "Image location"
+
+    -   image: alpine:3.21
+        entrypoint-type: override
+        entrypoint-override: sh
+        arguments:
+            - "-c"
+            - 'echo "Entrypoint Override"'
+
+    -   image: alpine:3.21
+        arguments:
+            - find
+            - "."
+
+    -   image: alpine:3.21
+        arguments:
+            - ls
+            - "-al"
+
+    -   image: alpine:3.21
+        entrypoint-type: script
+        entrypoint-script: .opencicd/publish-test.sh
+        arguments:
+            - "Entrypoint script"
+
+    -   dockerfile: .opencicd/publish-test.dockerfile
+        entrypoint-type: override
+        entrypoint-override: bash
+        arguments:
+            - "-c"
+            - 'echo "Image Build"'
+
+    -   dockerfile: .opencicd/publish-test.dockerfile
+        entrypoint-type: noop
+        build-output-file: dist/output.tar
+        build-output-name-file: dist/output.name.txt
+            login-registry: "registry.example.com"
+        push-tags: "1,2,3"
+            push-image: "example-org/opencicd-testing"
+
+
+

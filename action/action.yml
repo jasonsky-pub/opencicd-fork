@@ -1,0 +1,98 @@
+##
+##             Copyright 2025 Comcast Cable Communications Management, LLC
+##             Licensed under the Apache License, Version 2.0 (the "License");
+##             you may not use this file except in compliance with the License.
+##             You may obtain a copy of the License at
+##
+##             http://www.apache.org/licenses/LICENSE-2.0
+##
+##             Unless required by applicable law or agreed to in writing, software
+##             distributed under the License is distributed on an "AS IS" BASIS,
+##             WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+##             See the License for the specific language governing permissions and
+##             limitations under the License.
+##
+##             SPDX-License-Identifier: Apache-2.0
+##
+name: Run OpenCiCd
+description: Build a docker image without publishing
+branding:
+  icon: box
+  color: purple
+inputs:
+  ACTION_TYPE:
+    description: Action Type for opencicd
+    required: true
+  ACTION:
+    description: Action for opencicd, if not specified, runs all
+  INPUTS_JSON:
+    description: JSON of the inputs to add to inputs
+  VARS_JSON:
+    description: JSON of the vars to add to inputs
+  SECRETS_JSON:
+    description: JSON of the secrets to use
+  DEBUG:
+    description: Enable debug mode
+    default: false
+  CICD_RELEASE_SUFFIX:
+    description: Suffix to append to the release version
+  SOURCE_CODE_FOLDER:
+    description: Source code folder, defaults to workspace folder
+    default: "${{ github.workspace }}"
+runs:
+  using: composite
+  steps:
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Set CICD release suffix
+      if: ${{ inputs.CICD_RELEASE_SUFFIX && inputs.CICD_RELEASE_SUFFIX != '' }}
+      shell: bash
+      id: set_cicd_release_suffix
+      run: |
+        export CICD_RELEASE_SUFFIX="${{ inputs.CICD_RELEASE_SUFFIX }}"
+        echo CICD_RELEASE_SUFFIX=$CICD_RELEASE_SUFFIX
+
+    - name: Run OpenCiCd
+      id: metadata
+      shell: bash
+      run: |
+        OPENCICD_VERSION=1${CICD_RELEASE_SUFFIX:+-${CICD_RELEASE_SUFFIX}}
+        
+        set -e
+        SOURCER_FOLDER="${{ inputs.SOURCE_CODE_FOLDER }}"
+        
+        # Awk command below passes all environment variable names through
+        SCRIPT_TO_RUN=$(docker run \
+            --volume "$SOURCER_FOLDER:/work" \
+            --workdir "/work" \
+            --rm \
+            $(awk 'BEGIN { for (k in ENVIRON) print "-e " k }') \
+            "TBD:${OPENCICD_VERSION}" \
+            --cicd \
+            --input-remove ACTION_TYPE \
+            --input-remove ACTION \
+            --input-remove INPUTS_JSON \
+            --input-remove VARS_JSON \
+            --input-remove SECRETS_JSON
+        )
+        
+        bash <( printf '%s' "$SCRIPT_TO_RUN" )
+        
+      env:
+        DEBUG: "${{ inputs.DEBUG }}"
+        ACTION_TYPE: "${{ inputs.ACTION_TYPE }}"
+        ACTION: "${{ inputs.ACTION }}"
+        PROJECT_FOLDER: "/work"
+        HOST_PROJECT_FOLDER: "${{ inputs.SOURCE_CODE_FOLDER }}"
+        CONTAINER_PROJECT_FOLDER: "/work"
+        INPUT_CURRENT_GITHUB_REF_NAME: "${{ github.ref_name }}"
+        INPUT_CURRENT_GITHUB_ACTOR: "${{ github.actor }}"
+        SECRET_CURRENT_GITHUB_TOKEN: "${{ github.token }}"
+        INPUT_REPO_FULL: "${{ github.repository }}"
+        INPUT_REPO_ORGANIZATION: "${{ github.repository_owner }}"
+        INPUT_REPO_NAME: "${{github.event.repository.name}}"
+        INPUTJSON_ALL_INPUTS: ${{ toJSON(inputs) }}
+        INPUTJSON_INPUTS_JSON: ${{ inputs.INPUTS_JSON }}
+        INPUTJSON_VARS_JSON: ${{ inputs.VARS_JSON }}
+        SECRETJSON_SECRET_JSON: ${{ inputs.SECRETS_JSON }}
