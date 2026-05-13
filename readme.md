@@ -16,7 +16,7 @@ To Install:
 - Type in your cli:
   
   ```
-  pip install "git+ssh://git@github.com/Comcast/OpenCICD.git@pip-latest#egg=opencicd"
+  pip install "git+https://github.com/Comcast/OpenCICD.git@main#egg=opencicd"
   ```
 
 ## Installation from source
