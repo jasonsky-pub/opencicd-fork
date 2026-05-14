@@ -17,7 +17,7 @@
 ##
 ##              This product includes software developed at Comcast (https://www.comcast.com/).##
 
-FROM alpine:3.21
+FROM alpine:3.22.4
 ARG SEMANTIC_VERSION
 
 RUN apk update
