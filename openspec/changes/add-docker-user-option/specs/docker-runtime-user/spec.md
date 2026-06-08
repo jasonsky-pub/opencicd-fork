@@ -30,3 +30,11 @@ The user-facing CLI documentation SHALL describe the `--docker-user` option, its
 - **WHEN** a user reads the documented CLI runtime options
 - **THEN** the documentation SHALL include an example that uses `--docker-user`
 - **THEN** the documentation SHALL explain that omitting the option preserves the current default behavior
+
+### Requirement: Composite action forwards runner uid and gid
+The bundled GitHub composite action SHALL invoke `opencicd` with `--docker-user <uid>:<gid>` using the current bash runner user's uid and gid.
+
+#### Scenario: Composite action generates commands for CI execution
+- **WHEN** the bundled composite action runs `opencicd` in CI
+- **THEN** it SHALL pass the current runner uid and gid to `--docker-user`
+- **THEN** generated runtime `docker run` commands SHALL inherit that uid:gid override

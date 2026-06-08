@@ -9,6 +9,7 @@ This change needs to add an opt-in docker runtime user without changing default 
 **Goals:**
 - Accept a `--docker-user` CLI option with the same value format docker expects for `docker run --user`.
 - Propagate that value through the execution path so every generated `docker run` command includes `--user <value>` only when configured.
+- Ensure the bundled composite action forwards the current runner uid:gid into `opencicd` so CI usage benefits from the same ownership behavior without extra caller configuration.
 - Keep existing behavior unchanged when the option is omitted.
 - Document the new flag clearly in runtime and docker usage documentation.
 - Add focused test coverage for command generation with and without the option.
@@ -40,9 +41,15 @@ Rationale: the user-facing requirement is about generated docker commands, and t
 
 Alternative considered: docs-only verification. Rejected because this behavior is easy to regress when command assembly changes.
 
+5. Have the composite GitHub Action pass `$(id -u):$(id -g)` into `opencicd --docker-user`.
+Rationale: the action is the built-in CI entrypoint for this project, and it already shells out from the runner host before asking `opencicd` to generate docker commands. Forwarding the runner uid:gid there keeps file ownership aligned in the common CI path without changing action-file schema.
+
+Alternative considered: leaving the action unchanged and requiring every workflow author to pass the option manually. Rejected because it leaves the built-in CI entrypoint inconsistent with the intended ownership fix.
+
 ## Risks / Trade-offs
 
 - [Call signature churn in `run_action()` and `job_runner()`] -> Mitigation: keep the new parameter optional and update only the direct call sites in `__main__.py`.
 - [Users pass an invalid docker user string] -> Mitigation: treat the option as a direct pass-through and rely on docker to validate it, documenting the expected `uid`, `uid:gid`, or named-user formats.
 - [Docs drift from actual printed command output] -> Mitigation: update the command examples in `docs/running.md` to show both default behavior and an example with `--docker-user`.
 - [Missing test harness around command generation] -> Mitigation: add narrow unit coverage around the command-building path rather than relying on end-to-end docker execution.
+- [Composite action runner shells may differ in how `id` is provided] -> Mitigation: keep the implementation to standard `bash` + `id -u` / `id -g`, which matches the action's existing `shell: bash` contract.

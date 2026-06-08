@@ -12,3 +12,7 @@
 
 - [x] 3.1 Update `docs/running.md` to document `--docker-user`, including accepted value examples and `--method print` output that shows the conditional `--user` flag.
 - [x] 3.2 Update `docs/action-files.md` to explain when callers may want to use `--docker-user` for mounted project directories and clarify that the option affects runtime `docker run` commands only.
+
+## 4. Composite action integration
+
+- [x] 4.1 Update `action/action.yml` to pass the current bash runner uid:gid into `opencicd --docker-user` so GitHub Action execution uses the same runtime ownership override.
