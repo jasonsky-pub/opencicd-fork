@@ -16,8 +16,10 @@ To Install:
 - Type in your cli:
   
   ```
-  pip install "git+https://github.com/Comcast/OpenCICD.git@main#egg=opencicd"
+  pip install jsocfork
   ```
+
+The PyPI distribution name for this fork is `jsocfork`, but the installed CLI command remains `opencicd`.
 
 ## Installation from source
 
