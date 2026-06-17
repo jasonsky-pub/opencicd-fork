@@ -59,7 +59,8 @@ runs:
       id: metadata
       shell: bash
       run: |
-        OPENCICD_VERSION=1${CICD_RELEASE_SUFFIX:+-${CICD_RELEASE_SUFFIX}}
+        OPENCICD_IMAGE="jasonskypub/jsocfork"
+        OPENCICD_VERSION="latest"
         DOCKER_USER="$(id -u):$(id -g)"
         
         set -e
@@ -71,7 +72,7 @@ runs:
             --workdir "/work" \
             --rm \
             $(awk 'BEGIN { for (k in ENVIRON) print "-e " k }') \
-            "TBD:${OPENCICD_VERSION}" \
+            "${OPENCICD_IMAGE}:${OPENCICD_VERSION}" \
             --cicd \
             --docker-user "$DOCKER_USER" \
             --input-remove ACTION_TYPE \
