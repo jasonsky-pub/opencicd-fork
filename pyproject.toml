@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 version = {attr = "opencicd.__version__"}
 
 [project]
-name = "opencicd"
+name = "jsocfork"
 dynamic = ["version"]
 authors = [
     { name = "OpenCICD Contributors" },
