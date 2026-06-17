@@ -35,6 +35,9 @@ class RunMethod(Enum):
     Print=1
     Exec=2
 
+
+TMP_HOME_PATH = "/tmp/home"
+
 def run_action(
     project: Project,
     action: Action,
@@ -43,7 +46,8 @@ def run_action(
     secrets: dict[str, str],
     use_posix: bool,
     quiet: bool,
-    docker_user: Optional[str] = None
+    docker_user: Optional[str] = None,
+    tmp_home: bool = False
 ):
     project_action = action.project_action
     if not quiet:
@@ -56,7 +60,7 @@ def run_action(
     action.validate()
     job_number=1
     for job in action.jobs:
-        job_runner(project, project_action, action, job, run_method, inputs, secrets, use_posix, quiet, job_number, docker_user)
+        job_runner(project, project_action, action, job, run_method, inputs, secrets, use_posix, quiet, job_number, docker_user, tmp_home)
         job_number=job_number+1
 
 def display_text(
@@ -86,7 +90,8 @@ def job_runner(
     use_posix: bool,
     quiet: bool,
     job_number: int,
-    docker_user: Optional[str] = None
+    docker_user: Optional[str] = None,
+    tmp_home: bool = False
 ):
     display_text(
         run_method,
@@ -118,12 +123,19 @@ def job_runner(
         command_array.append(text("--user"))
         command_array.append(text(docker_user))
 
+    if tmp_home:
+        command_array.append(text("--tmpfs"))
+        command_array.append(text(build_tmp_home_mount_option(docker_user)))
+
     if job.volumes:
         for key, value in job.volumes.items():
             volume_source = replace_values(key, replacement_values)
             volume_destination = replace_values(value, replacement_values)
             command_array.append(text("--volume"))
             command_array.append(volume_source.append(text(":")).append(volume_destination))
+
+    if tmp_home:
+        replacement_values["HOME"] = text(TMP_HOME_PATH)
 
     # Add environment variables:
     for (key, value) in replacement_values.items():
@@ -597,6 +609,31 @@ def build_replacement_values(
     replacement_values["ACTION"] = text(project_action.name)
 
     return replacement_values
+
+
+def build_tmp_home_mount_option(docker_user: Optional[str]) -> str:
+    mount_option = f"{TMP_HOME_PATH}:rw"
+    uid_gid = parse_numeric_docker_user(docker_user)
+    if uid_gid is None:
+        return mount_option
+
+    uid, gid = uid_gid
+    mount_option = f"{mount_option},uid={uid}"
+    if gid is not None:
+        mount_option = f"{mount_option},gid={gid}"
+
+    return mount_option
+
+
+def parse_numeric_docker_user(docker_user: Optional[str]) -> Optional[tuple[str, Optional[str]]]:
+    if docker_user is None:
+        return None
+
+    match = re.fullmatch(r"(\d+)(?::(\d+))?", docker_user)
+    if match is None:
+        return None
+
+    return match.group(1), match.group(2)
 
 def replace_values(value: str, replacement_values: dict[str, SecretableText]) -> SecretableText:
     displayable_value = re.sub(r"\${\|(.*?)\|}", lambda match: replace_values_regex(replacement_values, False, match), value)

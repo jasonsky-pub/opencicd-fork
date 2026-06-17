@@ -48,6 +48,8 @@ async def async_main(args):
     arg_parser.add_argument("--host-project-folder", required=False, help="Specify Root Project Folder on the host: (default .), can be different from project-folder in the case of method=print")
     arg_parser.add_argument("--container-project-folder", required=False, help="Specify Root Project Folder inside the container (default /work)")
     arg_parser.add_argument("--docker-user", required=False, help="Specify the docker runtime user value to pass to docker run --user")
+    arg_parser.add_argument("--tmp-home", required=False,
+                            help="Add a tmpfs-backed HOME directory for runtime docker run commands", action=argparse.BooleanOptionalAction)
 
     arg_parser.add_argument("-o", "--output-format", required=False,
                             help="output format to use, \"raw\", \"json\", \"yaml\"")
@@ -142,6 +144,9 @@ async def async_main(args):
         container_project_folder = constants.default_container_project_folder
 
     docker_user = result.docker_user
+    tmp_home = result.tmp_home
+    if tmp_home is None:
+        tmp_home = result.cicd
 
     logging.debug(f"Project folder: {project_folder}")
     logging.debug(f"Host Project folder: {host_project_folder}")
@@ -242,7 +247,7 @@ async def async_main(args):
         actions = [load_action(x) for x in project_actions]
         ordered_actions = action_organizer(actions)
         for action in ordered_actions:
-            run_action(project, action, method, inputs, secrets, use_posix, quiet, docker_user)
+            run_action(project, action, method, inputs, secrets, use_posix, quiet, docker_user, tmp_home)
         return
 
     actions = project.get_actions()
@@ -263,7 +268,7 @@ async def async_main(args):
 
     action = load_action(project_action)
 
-    run_action(project, action, method, inputs, secrets, use_posix, quiet, docker_user)
+    run_action(project, action, method, inputs, secrets, use_posix, quiet, docker_user, tmp_home)
 
 
 def main():
