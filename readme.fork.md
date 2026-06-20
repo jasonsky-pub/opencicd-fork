@@ -33,16 +33,37 @@ Current fork-only commits on top of upstream `main`:
 1. `b28fc2d` - Rename the PyPI package from the upstream package name to `jsocfork`, update fork release docs, and keep the installed CLI as `opencicd`.
 2. `29c859d` - Update `action/action.yml` to use the fork Docker image `jasonskypub/jsocfork` instead of the upstream image.
 
-## Release variables
+## Choose and set the release version
+
+Check the current published PyPI version and the local source version before choosing the next release:
 
 ```bash
-export VERSION=0.0.1
-export IMAGE=jasonskypub/jsocfork
+cd /run/media/private/skyzero/random/local/jasonsky-pub/opencicd-fork
+
+python - <<'PY'
+import json
+import urllib.request
+from pathlib import Path
+
+with urllib.request.urlopen("https://pypi.org/pypi/jsocfork/json", timeout=20) as r:
+    data = json.load(r)
+
+print("latest_pypi_version =", data["info"]["version"])
+print("all_pypi_versions =", ", ".join(sorted(data.get("releases", {}))))
+
+for line in Path("src/opencicd/__init__.py").read_text(encoding="utf-8").splitlines():
+    if line.startswith("__version__ = "):
+        print("local_source_version =", line.split("=", 1)[1].strip().strip('"'))
+        break
+PY
 ```
 
-## Build the Python package
+Then set the next release version and update the source version before building:
 
 ```bash
+export VERSION=0.0.4
+export IMAGE=jasonskypub/jsocfork
+
 python - <<'PY'
 from pathlib import Path
 import os
@@ -55,6 +76,11 @@ text = re.sub(r'__version__ = "[^"]+"', f'__version__ = "{version}"', text)
 text = re.sub(r'__semver__ = "[^"]+"', f'__semver__ = "{version}"', text)
 path.write_text(text, encoding="utf-8")
 PY
+```
+
+## Build the Python package
+
+```bash
 rm -rf dist build *.egg-info
 python -m pip install --upgrade build twine
 python -m build
