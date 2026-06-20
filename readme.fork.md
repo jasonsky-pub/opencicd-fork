@@ -6,6 +6,33 @@ This fork publishes:
 - Installed CLI command: `opencicd`
 - Docker image: `jasonskypub/jsocfork`
 
+## Update from upstream
+
+This fork tracks `../OpenCICD` locally and rebases its fork-specific commits on top of upstream `main`.
+
+```bash
+cd /run/media/private/skyzero/random/local/jasonsky-pub/opencicd-fork
+git fetch ../OpenCICD main --quiet
+git rebase FETCH_HEAD
+git push --force-with-lease origin main
+```
+
+To review what the fork adds on top of upstream after the rebase:
+
+```bash
+cd /run/media/private/skyzero/random/local/jasonsky-pub/opencicd-fork
+BASE=$(git merge-base HEAD FETCH_HEAD)
+git --no-pager log --reverse --date=short \
+  --pretty=format:'%h %ad %s' "$BASE"..HEAD
+```
+
+## Fork-specific changes since upstream
+
+Current fork-only commits on top of upstream `main`:
+
+1. `b28fc2d` - Rename the PyPI package from the upstream package name to `jsocfork`, update fork release docs, and keep the installed CLI as `opencicd`.
+2. `29c859d` - Update `action/action.yml` to use the fork Docker image `jasonskypub/jsocfork` instead of the upstream image.
+
 ## Release variables
 
 ```bash
