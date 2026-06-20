@@ -29,15 +29,14 @@ COPY . .
 
 # get the python package version
 RUN pip3 install --break-system-packages packaging
-RUN PACKAGE_VERSION=`python3 -c "from packaging.version import Version; print(Version('$SEMANTIC_VERSION'))"`;
 
 WORKDIR /tmp/build
-# Update Project version file
+# Update project version file
 ENV initfile="src/opencicd/__init__.py"
-RUN cat $initfile | grep -v -E "__version__|__semver__" > "${initfile}.new";
-RUN rm -f $initfile
-RUN mv "${initfile}.new" "$initfile"
-RUN printf "\n__version__ = \"$PACKAGE_VERSION\"\n__semver__ = \"$SEMANTIC_VERSION\"\n\n" >> $initfile;
+RUN PACKAGE_VERSION="$(python3 -c "from packaging.version import Version; print(Version('$SEMANTIC_VERSION'))")" && \
+    grep -v -E "__version__|__semver__" "$initfile" > "${initfile}.new" && \
+    mv "${initfile}.new" "$initfile" && \
+    printf "\n__version__ = \"%s\"\n__semver__ = \"%s\"\n\n" "$PACKAGE_VERSION" "$SEMANTIC_VERSION" >> "$initfile"
 
 # build
 RUN pip3 install --break-system-packages .

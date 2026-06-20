@@ -19,5 +19,5 @@
 __author__ = 'OpenCICD contributors'
 __credits__ = 'Comcast Cable Communications Management, LLC'
 __license__ = 'Apache 2.0'
-__version__ = "0.0.1"
-__semver__ = "0.0.1"
+__version__ = "0.0.3"
+__semver__ = "0.0.3"
